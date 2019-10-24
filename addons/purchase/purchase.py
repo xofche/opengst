@@ -51,8 +51,8 @@ class purchase_order(osv.osv):
                val1 += line.price_subtotal
                for c in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, order.partner_address_id.id, line.product_id.id, order.partner_id)['taxes']:
                     val += c.get('amount', 0.0)
-            res[order.id]['amount_tax']=cur_obj.round(cr, uid, cur, val)
-            res[order.id]['amount_untaxed']=cur_obj.round(cr, uid, cur, val1)
+            res[order.id]['amount_tax'] = val
+            res[order.id]['amount_untaxed'] =val1
             res[order.id]['amount_total']=res[order.id]['amount_untaxed'] + res[order.id]['amount_tax']
         return res
 
@@ -379,7 +379,7 @@ class purchase_order(osv.osv):
                 'address_invoice_id': order.partner_address_id.id,
                 'address_contact_id': order.partner_address_id.id,
                 'journal_id': len(journal_ids) and journal_ids[0] or False,
-                'invoice_line': [(6, 0, inv_lines)], 
+                'invoice_line': [(6, 0, inv_lines)],
                 'origin': order.name,
                 'fiscal_position': order.fiscal_position.id or order.partner_id.property_account_position.id,
                 'payment_term': order.partner_id.property_payment_term and order.partner_id.property_payment_term.id or False,
@@ -420,7 +420,7 @@ class purchase_order(osv.osv):
                 if inv:
                     wf_service.trg_validate(uid, 'account.invoice', inv.id, 'invoice_cancel', cr)
         self.write(cr,uid,ids,{'state':'cancel'})
-        
+
         for (id, name) in self.name_get(cr, uid, ids):
             wf_service.trg_validate(uid, 'purchase.order', id, 'purchase_cancel', cr)
             message = _("Purchase order '%s' is cancelled.") % name
@@ -439,7 +439,7 @@ class purchase_order(osv.osv):
             'company_id': order.company_id.id,
             'move_lines' : [],
         }
-         
+
     def _prepare_order_line_move(self, cr, uid, order, order_line, picking_id, context=None):
         return {
             'name': order.name + ': ' + (order_line.name or ''),
@@ -480,7 +480,7 @@ class purchase_order(osv.osv):
                                will be added. A new picking will be created if omitted.
         :return: list of IDs of pickings used/created for the given order lines (usually just one)
         """
-        if not picking_id: 
+        if not picking_id:
             picking_id = self.pool.get('stock.picking').create(cr, uid, self._prepare_order_picking(cr, uid, order, context=context))
         todo_moves = []
         stock_move = self.pool.get('stock.move')
@@ -736,7 +736,7 @@ class purchase_order_line(osv.osv):
         """
         if context is None:
             context = {}
-        
+
         res = {'value': {'price_unit': price_unit or 0.0, 'name': name or '', 'notes': notes or '', 'product_uom' : uom_id or False}}
         if not product_id:
             return res
@@ -760,7 +760,7 @@ class purchase_order_line(osv.osv):
         context_partner = {'lang': lang, 'partner_id': partner_id}
         product = product_product.browse(cr, uid, product_id, context=context_partner)
         res['value'].update({'name': product.partner_ref, 'notes': notes or product.description_purchase})
-        
+
         # - set a domain on product_uom
         res['domain'] = {'product_uom': [('category_id','=',product.uom_id.category_id.id)]}
 
@@ -768,7 +768,7 @@ class purchase_order_line(osv.osv):
         product_uom_po_id = product.uom_po_id.id
         if not uom_id or context.get('force_product_uom'):
             uom_id = product_uom_po_id
-        
+
         if product.uom_id.category_id.id != product_uom.browse(cr, uid, uom_id, context=context).category_id.id:
             res['warning'] = {'title': _('Warning'), 'message': _('Selected UOM does not belong to the same category as the product UOM')}
             uom_id = product_uom_po_id
@@ -798,7 +798,7 @@ class purchase_order_line(osv.osv):
         # - determine price_unit and taxes_id
         price = product_pricelist.price_get(cr, uid, [pricelist_id],
                     product.id, qty or 1.0, partner_id, {'uom': uom_id, 'date': date_order})[pricelist_id]
-        
+
         taxes = account_tax.browse(cr, uid, map(lambda x: x.id, product.supplier_taxes_id))
         fpos = fiscal_position_id and account_fiscal_position.browse(cr, uid, fiscal_position_id, context=context) or False
         taxes_ids = account_fiscal_position.map_tax(cr, uid, fpos, taxes)
