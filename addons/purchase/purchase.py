@@ -52,7 +52,7 @@ class purchase_order(osv.osv):
                for c in self.pool.get('account.tax').compute_all(cr, uid, line.taxes_id, line.price_unit, line.product_qty, order.partner_address_id.id, line.product_id.id, order.partner_id)['taxes']:
                     val += c.get('amount', 0.0)
             res[order.id]['amount_tax'] = val
-            res[order.id]['amount_untaxed'] =val1
+            res[order.id]['amount_untaxed'] = val1
             res[order.id]['amount_total']=res[order.id]['amount_untaxed'] + res[order.id]['amount_tax']
         return res
 
